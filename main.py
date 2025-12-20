@@ -1,4 +1,4 @@
-```python
+
 from flask import Flask, request
 import requests
 import os
@@ -154,7 +154,7 @@ def send_social_media(chat_id):
 def send_game(chat_id):
     keyboard = {
         "inline_keyboard": [
-            [{"text": "🎮 Harmonic Collector", "url": "https://maniac234.github.io/Game/ "}]
+            [{"text": "🎮 Harmonic Collector", "url": "https://maniac234.github.io/Game2/ "}]
         ]
     }
     payload = {
@@ -269,4 +269,5 @@ def set_webhook():
         f"https://api.telegram.org/bot {TOKEN}/setWebhook",
         data={"url": webhook_url}
     )
+
     return f"Webhook configurado para: {webhook_url}\nResposta: {response.json()}"
