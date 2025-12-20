@@ -1,3 +1,4 @@
+```python
 from flask import Flask, request
 import requests
 import os
@@ -7,7 +8,7 @@ import time
 app = Flask(__name__)
 TOKEN = os.getenv("TOKEN")
 BOT_ID = os.getenv("BOT_ID", "")
-TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"
+TELEGRAM_API = f"https://api.telegram.org/bot {TOKEN}"
 
 # Armazena última mensagem de boas-vindas por chat_id
 last_welcome_message = {}
@@ -18,7 +19,7 @@ pending_users = {}
 # Gatilhos de compra
 TRIGGERS = ["como comprar", "onde comprar", "quero comprar", "comprar rhap", "como compra"]
 
-# --- FUNÇÕES ---
+# --- FUNÇÕES DE SUPORTE ---
 def remove_user_if_pending(chat_id, user_id):
     time.sleep(60)
     if user_id in pending_users:
@@ -69,10 +70,10 @@ def send_welcome(chat_id, first_name):
 
     keyboard = {
         "inline_keyboard": [
-            [{"text": "🌐 Site oficial", "url": "https://www.rhapsodycoin.com"}],
+            [{"text": "🌐 Site oficial", "url": "https://www.rhapsodycoin.com "}],
             [
                 {"text": "📌 FAQ", "callback_data": "faq"},
-                {"text": "🛒 Compre RHAP", "url": "https://rhapsody.criptocash.app/"}
+                {"text": "🛒 Compre RHAP", "url": "https://rhapsody.criptocash.app/ "}
             ],
             [
                 {"text": "🎮 Jogar Agora", "callback_data": "play_game"}
@@ -124,7 +125,7 @@ def send_faq(chat_id):
 
     keyboard = {
         "inline_keyboard": [
-            [{"text": "📘 Leia nosso Whitepaper", "url": "https://rhapsody-coin.gitbook.io/rhapsody-protocol/"}]
+            [{"text": "📘 Leia nosso Whitepaper", "url": "https://rhapsody-coin.gitbook.io/rhapsody-protocol/ "}]
         ]
     }
 
@@ -141,11 +142,11 @@ def send_social_media(chat_id):
     payload = {
         "chat_id": chat_id,
         "text": "📱 *Redes Sociais*:\n\n"
-                "🔗 [Twitter/X](https://twitter.com/rhapsodycoin)\n"
-                "📸 [Instagram](https://instagram.com/rhapsodycoin)\n"
-                "💼 [LinkedIn](https://linkedin.com/company/rhapsody-protocol)\n"
-                "🎥 [YouTube](https://youtube.com/@rhapsodyprotocol)\n"
-                "💬 [Telegram Oficial](https://t.me/rhapsodycoin)",
+                "🔗 [Twitter/X](https://twitter.com/rhapsodycoin )\n"
+                "📸 [Instagram](https://instagram.com/rhapsodycoin )\n"
+                "💼 [LinkedIn](https://linkedin.com/company/rhapsody-protocol )\n"
+                "🎥 [YouTube](https://youtube.com/@rhapsodyprotocol )\n"
+                "💬 [Telegram Oficial](https://t.me/rhapsodycoin )",
         "parse_mode": "Markdown"
     }
     requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
@@ -153,7 +154,7 @@ def send_social_media(chat_id):
 def send_game(chat_id):
     keyboard = {
         "inline_keyboard": [
-            [{"text": "🎮 RHAP Collector", "url": "https://maniac234.github.io/game2/"}]
+            [{"text": "🎮 Harmonic Collector", "url": "https://maniac234.github.io/Game/ "}]
         ]
     }
     payload = {
@@ -200,7 +201,7 @@ def webhook():
 
             for trigger in TRIGGERS:
                 if trigger in text:
-                    keyboard = {"inline_keyboard": [[{"text": "🛒 Vá para a Loja", "url": "https://rhapsody.criptocash.app/"}]]}
+                    keyboard = {"inline_keyboard": [[{"text": "🛒 Vá para a Loja", "url": "https://rhapsody.criptocash.app/ "}]]}
                     payload = {
                         "chat_id": chat_id,
                         "video": "BAACAgEAAxkBAAMyaTtJds7IEDJZKrPlUClLPkQ6gdsAAsMGAAKQcthFypomT3bj9iM2BA",
@@ -265,10 +266,7 @@ def home():
 def set_webhook():
     webhook_url = f"https://{request.host}/{TOKEN}"
     response = requests.post(
-        f"https://api.telegram.org/bot{TOKEN}/setWebhook",
+        f"https://api.telegram.org/bot {TOKEN}/setWebhook",
         data={"url": webhook_url}
     )
     return f"Webhook configurado para: {webhook_url}\nResposta: {response.json()}"
-```
-
----
