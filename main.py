@@ -1,14 +1,19 @@
-
 from flask import Flask, request
 import requests
 import os
 import threading
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 TOKEN = os.getenv("TOKEN")
 BOT_ID = os.getenv("BOT_ID", "")
-TELEGRAM_API = f"https://api.telegram.org/bot {TOKEN}"
+TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"
+
+# URL do jogo no GitHub Pages
+GAME_URL = os.getenv("GAME_URL", "https://maniac234.github.io/game3/")
 
 # Armazena última mensagem de boas-vindas por chat_id
 last_welcome_message = {}
@@ -70,13 +75,13 @@ def send_welcome(chat_id, first_name):
 
     keyboard = {
         "inline_keyboard": [
-            [{"text": "🌐 Site oficial", "url": "https://www.rhapsodycoin.com "}],
+            [{"text": "🌐 Site oficial", "url": "https://www.rhapsodycoin.com"}],
             [
                 {"text": "📌 FAQ", "callback_data": "faq"},
-                {"text": "🛒 Compre RHAP", "url": "https://rhapsody.criptocash.app/ "}
+                {"text": "🛒 Compre RHAP", "url": "https://rhapsody.criptocash.app/"}
             ],
             [
-                {"text": "🎮 Jogar Agora", "callback_data": "play_game"}
+                {"text": "🎮 Jogar Rhaps Catcher", "callback_data": "play_game"}
             ],
             [{"text": "📱 Redes sociais", "callback_data": "redes_sociais"}]
         ]
@@ -109,7 +114,7 @@ def send_faq(chat_id):
         "O supply total é fixo em 1.000.000.000 (1 bilhão) de tokens RHAP. Não haverá novas emissões além desse limite, garantindo escassez programada.\n\n"
         "*Qual será a função do token $RHAP?*\n"
         "O $RHAP é o token utilitário central do ecossistema. Ele será usado para:\n"
-        "- Acessar e interagir com aplicações gamificadas (como Musicplayce),\n"
+        "- Acessar e interagir com aplicações gamificadas (como Rhaps Catcher),\n"
         "- Participar de mecânicas de gacha, staking e recompensas,\n"
         "- Mintar NFTs certificados com utilidade real,\n"
         "- Futuramente, votar em decisões da DAO e pagar por serviços dentro do protocolo.\n\n"
@@ -117,15 +122,15 @@ def send_faq(chat_id):
         "Nesta fase, os usuários podem:\n"
         "- Participar da pré-venda (até 20/01/2026 em CriptoCash),\n"
         "- Se preparar para o lançamento oficial (23/01/2026 na Bitcoin Brasil),\n"
-        "- Acompanhar os cases de uso como a Musicplayce (apenas um exemplo de aplicação),\n"
+        "- Acompanhar os cases de uso como o Rhaps Catcher (jogo gamificado),\n"
         "- *Tornar-se um parceiro de divulgação*: se você tem um canal, comunidade ou audiência e quer promover o Rhapsody Protocol, inscreva-se no programa de afiliados e ganhe até *15% de comissão* sobre todas as vendas geradas por você!\n\n"
         "*Terá recompensas para os participantes da pré-venda?*\n"
-        "Sim! Os participantes da pré-venda terão acesso antecipado, possíveis bonificações de alocação, e poderão ser os primeiros a utilizar o token em aplicações reais do ecossistema, como o Gacha Harmônico e o marketplace de NFTs."
+        "Sim! Os participantes da pré-venda terão acesso antecipado, possíveis bonificações de alocação, e poderão ser os primeiros a utilizar o token em aplicações reais do ecossistema, como o Rhaps Catcher e o marketplace de NFTs."
     )
 
     keyboard = {
         "inline_keyboard": [
-            [{"text": "📘 Leia nosso Whitepaper", "url": "https://rhapsody-coin.gitbook.io/rhapsody-protocol/ "}]
+            [{"text": "📘 Leia nosso Whitepaper", "url": "https://rhapsody-coin.gitbook.io/rhapsody-protocol/"}]
         ]
     }
 
@@ -142,25 +147,53 @@ def send_social_media(chat_id):
     payload = {
         "chat_id": chat_id,
         "text": "📱 *Redes Sociais*:\n\n"
-                "🔗 [Twitter/X](https://twitter.com/rhapsodycoin )\n"
-                "📸 [Instagram](https://instagram.com/rhapsodycoin )\n"
-                "💼 [LinkedIn](https://linkedin.com/company/rhapsody-protocol )\n"
-                "🎥 [YouTube](https://youtube.com/@rhapsodyprotocol )\n"
-                "💬 [Telegram Oficial](https://t.me/rhapsodycoin )",
+                "🔗 [Twitter/X](https://twitter.com/rhapsodycoin)\n"
+                "📸 [Instagram](https://instagram.com/rhapsodycoin)\n"
+                "💼 [LinkedIn](https://linkedin.com/company/rhapsody-protocol)\n"
+                "🎥 [YouTube](https://youtube.com/@rhapsodyprotocol)\n"
+                "💬 [Telegram Oficial](https://t.me/rhapsodycoin)",
         "parse_mode": "Markdown"
     }
     requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
 
 def send_game(chat_id):
+    """Envia o botão do jogo Rhaps Catcher com Web App"""
     keyboard = {
         "inline_keyboard": [
-            [{"text": "🎮 Harmonic Collector", "url": "https://maniac234.github.io/Game2/ "}]
+            [{
+                "text": "🎮 Jogar Rhaps Catcher",
+                "web_app": {"url": GAME_URL}
+            }]
         ]
     }
     payload = {
         "chat_id": chat_id,
-        "text": "🌟 Colete moedas $RHAP no nosso jogo exclusivo!\n\n"
-                "Use o mouse (PC) ou toque na tela (mobile).",
+        "text": "🌟 *Bem-vindo ao Rhaps Catcher!*\n\n"
+                "Colete moedas $RHAP no nosso jogo exclusivo!\n\n"
+                "💡 *Controles:*\n"
+                "• 🖱️ Mouse ou 👉 Toque para mover\n"
+                "• ⌨️ Setas ou botões para mobile\n\n"
+                "⚡ A velocidade aumenta conforme você pega moedas!\n\n"
+                "Seu recorde pessoal é salvo automaticamente.",
+        "parse_mode": "Markdown",
+        "reply_markup": keyboard
+    }
+    requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
+
+def send_buy_message(chat_id):
+    """Resposta ao detectar gatilhos de compra"""
+    keyboard = {
+        "inline_keyboard": [
+            [{"text": "💰 Compre RHAP Agora", "url": "https://rhapsody.criptocash.app/"}],
+            [{"text": "📌 Ver FAQ", "callback_data": "faq"}]
+        ]
+    }
+    payload = {
+        "chat_id": chat_id,
+        "text": "🚀 *Ótima pergunta!*\n\n"
+                "Você pode adquirir $RHAP na plataforma CriptoCash durante a pré-venda (até 20/01/2026).\n\n"
+                "O lançamento oficial acontecerá em 23/01/2026 na Bitcoin Brasil (BBT).",
+        "parse_mode": "Markdown",
         "reply_markup": keyboard
     }
     requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
@@ -198,76 +231,67 @@ def webhook():
                     }
                     requests.post(f"{TELEGRAM_API}/sendMessage", json=reply)
                 return "OK"
+            
+            if text == "/jogo":
+                send_game(chat_id)
+                return "OK"
 
-            for trigger in TRIGGERS:
-                if trigger in text:
-                    keyboard = {"inline_keyboard": [[{"text": "🛒 Vá para a Loja", "url": "https://rhapsody.criptocash.app/ "}]]}
-                    payload = {
-                        "chat_id": chat_id,
-                        "video": "BAACAgEAAxkBAAMyaTtJds7IEDJZKrPlUClLPkQ6gdsAAsMGAAKQcthFypomT3bj9iM2BA",
-                        "caption": "🎥 Aqui está como comprar $RHAP!",
-                        "reply_markup": keyboard
-                    }
-                    requests.post(f"{TELEGRAM_API}/sendVideo", json=payload)
-                    break
-            return "OK"
+            if text == "/faq":
+                send_faq(chat_id)
+                return "OK"
 
+            if text == "/redes":
+                send_social_media(chat_id)
+                return "OK"
+
+            if text == "/comprar":
+                send_buy_message(chat_id)
+                return "OK"
+
+            # Detecta gatilhos de compra em mensagens normais
+            if any(trigger in text for trigger in TRIGGERS):
+                send_buy_message(chat_id)
+                return "OK"
+
+    # Callback queries (botões inline)
     if data and "callback_query" in data:
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
-        data_value = callback["data"]
-        from_user_id = callback["from"]["id"]
+        callback_data = callback["data"]
+        user_id = callback["from"]["id"]
 
-        if data_value.startswith("captcha_"):
-            try:
-                target_user_id = int(data_value.split("_", 1)[1])
-                if from_user_id == target_user_id and target_user_id in pending_users:
-                    pending_users.pop(target_user_id, None)
-                    requests.post(f"{TELEGRAM_API}/deleteMessage", json={
-                        "chat_id": chat_id,
-                        "message_id": callback["message"]["message_id"]
-                    })
-                    first_name = callback["from"].get("first_name", "amigo")
-                    send_welcome(chat_id, first_name)
-                    requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={
-                        "callback_query_id": callback["id"],
-                        "text": "✅ Bem-vindo à Comunidade Rhapsody!",
-                        "show_alert": False
-                    })
-                else:
-                    requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={
-                        "callback_query_id": callback["id"],
-                        "text": "❌ Este CAPTCHA não é para você.",
-                        "show_alert": True
-                    })
-            except:
-                pass
+        if callback_data == "captcha_" + str(user_id):
+            if user_id in pending_users:
+                pending_users.pop(user_id, None)
+                response = requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={
+                    "callback_query_id": callback["id"],
+                    "text": "✅ Bem-vindo! Você foi verificado.",
+                    "show_alert": False
+                })
             return "OK"
 
-        requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
-        
-        if data_value == "faq":
+        if callback_data == "faq":
             send_faq(chat_id)
-        elif data_value == "redes_sociais":
-            send_social_media(chat_id)
-        elif data_value == "play_game":
+            requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
+            return "OK"
+
+        if callback_data == "play_game":
             send_game(chat_id)
-            
-        return "OK"
+            requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
+            return "OK"
+
+        if callback_data == "redes_sociais":
+            send_social_media(chat_id)
+            requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
+            return "OK"
 
     return "OK"
 
-# --- ROTAS AUXILIARES ---
-@app.route("/")
-def home():
-    return "✅ Bot ativo! | Rhapsody Protocol — Gamificação e engajamento digital."
+# --- ROTAS ---
+@app.route("/", methods=["GET"])
+def index():
+    return "Bot Rhapsody Protocol + Rhaps Catcher running!", 200
 
-@app.route("/setwebhook")
-def set_webhook():
-    webhook_url = f"https://{request.host}/{TOKEN}"
-    response = requests.post(
-        f"https://api.telegram.org/bot {TOKEN}/setWebhook",
-        data={"url": webhook_url}
-    )
+if __name__ == "__main__":
+    app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
 
-    return f"Webhook configurado para: {webhook_url}\nResposta: {response.json()}"
