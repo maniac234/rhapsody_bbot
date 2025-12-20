@@ -10,10 +10,11 @@ load_dotenv()
 app = Flask(__name__)
 TOKEN = os.getenv("TOKEN")
 BOT_ID = os.getenv("BOT_ID", "")
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "")
 TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"
 
 # URL do jogo no GitHub Pages
-GAME_URL = os.getenv("GAME_URL", "https://maniac234.github.io/game3/")
+GAME_URL = os.getenv("GAME_URL", "https://seu-usuario.github.io/rhaps-catcher/jogo.html")
 
 # Armazena última mensagem de boas-vindas por chat_id
 last_welcome_message = {}
@@ -23,6 +24,27 @@ pending_users = {}
 
 # Gatilhos de compra
 TRIGGERS = ["como comprar", "onde comprar", "quero comprar", "comprar rhap", "como compra"]
+
+# --- CONFIGURAR WEBHOOK ---
+def set_webhook():
+    """Configura o webhook para receber mensagens do Telegram"""
+    if not RENDER_EXTERNAL_URL:
+        print("⚠️ RENDER_EXTERNAL_URL não configurada!")
+        return
+    
+    webhook_url = f"{RENDER_EXTERNAL_URL}/{TOKEN}"
+    try:
+        payload = {"url": webhook_url}
+        response = requests.post(f"{TELEGRAM_API}/setWebhook", json=payload)
+        result = response.json()
+        
+        if result.get("ok"):
+            print(f"✅ Webhook configurado com sucesso!")
+            print(f"URL: {webhook_url}")
+        else:
+            print(f"❌ Erro ao configurar webhook: {result}")
+    except Exception as e:
+        print(f"❌ Erro: {e}")
 
 # --- FUNÇÕES DE SUPORTE ---
 def remove_user_if_pending(chat_id, user_id):
@@ -105,27 +127,15 @@ def send_faq(chat_id):
     faq_text = (
         "📌 *Aqui está a lista de perguntas frequentes atualizada sobre o Rhapsody Protocol*\n\n"
         "*Em que situação está o projeto atualmente?*\n"
-        "O Rhapsody Protocol está em fase de pré-venda, que vai até 20 de janeiro de 2026 na plataforma CriptoCash. O lançamento oficial do token $RHAP ocorrerá em 23 de janeiro de 2026 na Bitcoin Brasil (BBT). A Musicplayce é apenas o primeiro case de uso dentro do protocolo — uma demonstração prática de como empresas podem integrar gamificação, NFTs e recompensas com RHAP.\n\n"
+        "O Rhapsody Protocol está em fase de pré-venda, que vai até 20 de janeiro de 2026 na plataforma CriptoCash. O lançamento oficial do token $RHAP ocorrerá em 23 de janeiro de 2026 na Bitcoin Brasil (BBT).\n\n"
         "*O token $RHAP já foi lançado?*\n"
-        "Não, o token $RHAP ainda não foi lançado publicamente. Ele será disponibilizado oficialmente em 23 de janeiro de 2026 na Bitcoin Brasil, após encerrar a pré-venda em 20 de janeiro na CriptoCash.\n\n"
+        "Não, o token $RHAP ainda não foi lançado publicamente. Ele será disponibilizado oficialmente em 23 de janeiro de 2026 na Bitcoin Brasil.\n\n"
         "*Em qual rede o projeto e o token serão lançados?*\n"
-        "O Rhapsody Protocol e o token $RHAP operam na rede Ethereum, seguindo o padrão ERC-20. Essa escolha garante compatibilidade com wallets amplamente utilizadas, segurança e acesso ao ecossistema DeFi consolidado.\n\n"
+        "O Rhapsody Protocol e o token $RHAP operam na rede Ethereum, seguindo o padrão ERC-20.\n\n"
         "*Qual o supply total do token $RHAP?*\n"
-        "O supply total é fixo em 1.000.000.000 (1 bilhão) de tokens RHAP. Não haverá novas emissões além desse limite, garantindo escassez programada.\n\n"
+        "O supply total é fixo em 1.000.000.000 (1 bilhão) de tokens RHAP.\n\n"
         "*Qual será a função do token $RHAP?*\n"
-        "O $RHAP é o token utilitário central do ecossistema. Ele será usado para:\n"
-        "- Acessar e interagir com aplicações gamificadas (como Rhaps Catcher),\n"
-        "- Participar de mecânicas de gacha, staking e recompensas,\n"
-        "- Mintar NFTs certificados com utilidade real,\n"
-        "- Futuramente, votar em decisões da DAO e pagar por serviços dentro do protocolo.\n\n"
-        "*Qual a função dos usuários nessa fase do projeto?*\n"
-        "Nesta fase, os usuários podem:\n"
-        "- Participar da pré-venda (até 20/01/2026 em CriptoCash),\n"
-        "- Se preparar para o lançamento oficial (23/01/2026 na Bitcoin Brasil),\n"
-        "- Acompanhar os cases de uso como o Rhaps Catcher (jogo gamificado),\n"
-        "- *Tornar-se um parceiro de divulgação*: se você tem um canal, comunidade ou audiência e quer promover o Rhapsody Protocol, inscreva-se no programa de afiliados e ganhe até *15% de comissão* sobre todas as vendas geradas por você!\n\n"
-        "*Terá recompensas para os participantes da pré-venda?*\n"
-        "Sim! Os participantes da pré-venda terão acesso antecipado, possíveis bonificações de alocação, e poderão ser os primeiros a utilizar o token em aplicações reais do ecossistema, como o Rhaps Catcher e o marketplace de NFTs."
+        "O $RHAP é o token utilitário central do ecossistema. Será usado para acessar aplicações gamificadas, participar de mecânicas de recompensas, mintar NFTs e futuramente votar em decisões da DAO."
     )
 
     keyboard = {
@@ -290,8 +300,16 @@ def webhook():
 # --- ROTAS ---
 @app.route("/", methods=["GET"])
 def index():
-    return "Bot Rhapsody Protocol + Rhaps Catcher running!", 200
+    return "✅ Bot Rhapsody Protocol + Rhaps Catcher rodando!", 200
 
+@app.route("/health", methods=["GET"])
+def health():
+    return "OK", 200
+
+# --- INICIALIZAR ---
 if __name__ == "__main__":
+    print("🚀 Iniciando bot...")
+    set_webhook()
+    print("✅ Bot pronto!")
     app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
 
