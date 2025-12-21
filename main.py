@@ -187,6 +187,16 @@ def webhook():
         message = data["message"]
         chat_id = message["chat"]["id"]
 
+        # Novo membro entrou no grupo → Enviar boas-vindas
+        if "new_chat_member" in message:
+            new_member = message["new_chat_member"]
+            user_id = new_member.get("id")
+            if str(user_id) == BOT_ID:
+                return "OK"
+            first_name = new_member.get("first_name", "amigo")
+            send_welcome(chat_id, first_name)
+            return "OK"
+
         # Mensagens de texto
         if "text" in message:
             text = message["text"].lower().strip()
