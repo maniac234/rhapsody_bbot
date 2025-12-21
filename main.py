@@ -7,9 +7,9 @@ load_dotenv()
 
 app = Flask(__name__)
 TOKEN = os.getenv("TOKEN")
-BOT_ID = "8217007506"  # ← Definido diretamente conforme seu ID
+BOT_ID = os.getenv("BOT_ID", "")
 RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL", "")
-TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"  # ← removido espaço
+TELEGRAM_API = f"https://api.telegram.org/bot{TOKEN}"
 
 # URL do jogo no GitHub Pages
 GAME_URL = os.getenv("GAME_URL", "https://maniac234.github.io/game3/")
@@ -26,13 +26,13 @@ def set_webhook():
     if not RENDER_EXTERNAL_URL:
         print("⚠️ RENDER_EXTERNAL_URL não configurada!")
         return
-
+    
     webhook_url = f"{RENDER_EXTERNAL_URL}/{TOKEN}"
     try:
         payload = {"url": webhook_url}
         response = requests.post(f"{TELEGRAM_API}/setWebhook", json=payload)
         result = response.json()
-
+        
         if result.get("ok"):
             print(f"✅ Webhook configurado com sucesso!")
             print(f"URL: {webhook_url}")
@@ -76,7 +76,8 @@ def send_welcome(chat_id, first_name):
             [
                 {"text": "🎮 Jogar Rhaps Catcher", "web_app": {"url": GAME_URL}}
             ],
-            [{"text": "📱 Redes sociais", "callback_data": "redes_sociais"}]
+            [{"text": "📱 Redes sociais", "callback_data": "redes_sociais"}],
+            [{"text": "⚡ Desafio Maniac", "url": "https://maniac234.github.io/game3/"}]
         ]
     }
 
@@ -171,27 +172,27 @@ def webhook():
         message = data["message"]
         chat_id = message["chat"]["id"]
 
-        # Novo(s) membro(s) entraram no grupo → Enviar boas-vindas
-        if "new_chat_members" in message:
-            for new_member in message["new_chat_members"]:
-                user_id = new_member.get("id")
-                is_bot = new_member.get("is_bot", False)
-                first_name = new_member.get("first_name", "amigo")
-
-                print(f"🔔 Novo membro detectado: {first_name} (ID: {user_id}, Bot: {is_bot})")
-
-                # Ignorar se for outro bot (mas não o nosso)
-                if is_bot:
-                    print(f"❌ Ignorando bot: {first_name}")
-                    continue
-
-                # Ignorar se for o próprio bot entrando
-                if str(user_id) == BOT_ID:
-                    print(f"❌ Ignorando o próprio bot")
-                    continue
-
-                print(f"✅ Enviando boas-vindas para {first_name}")
-                send_welcome(chat_id, first_name)
+        # Novo membro entrou no grupo → Enviar boas-vindas
+        if "new_chat_member" in message:
+            new_member = message["new_chat_member"]
+            user_id = new_member.get("id")
+            is_bot = new_member.get("is_bot", False)
+            first_name = new_member.get("first_name", "amigo")
+            
+            print(f"🔔 Novo membro detectado: {first_name} (ID: {user_id}, Bot: {is_bot})")
+            
+            # Ignorar se for outro bot (mas não o nosso)
+            if is_bot:
+                print(f"❌ Ignorando bot: {first_name}")
+                return "OK"
+            
+            # Ignorar se for o próprio bot entrando
+            if BOT_ID and str(user_id) == BOT_ID:
+                print(f"❌ Ignorando o próprio bot")
+                return "OK"
+            
+            print(f"✅ Enviando boas-vindas para {first_name}")
+            send_welcome(chat_id, first_name)
             return "OK"
 
         # Mensagens de texto
@@ -228,7 +229,7 @@ def webhook():
         elif callback_data == "redes_sociais":
             send_social_media(chat_id)
 
-        # Responder callback (fecha o "loading")
+        # Responder callback
         requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
 
     return "OK"
@@ -237,4 +238,3 @@ def webhook():
 if __name__ == "__main__":
     set_webhook()
     app.run(host="0.0.0.0", port=5000)
-
