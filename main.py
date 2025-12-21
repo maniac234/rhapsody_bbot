@@ -88,11 +88,19 @@ def send_welcome(chat_id, first_name):
         "disable_web_page_preview": True
     }
 
-    response = requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
-    if response.status_code == 200:
-        msg_data = response.json()
-        if msg_data.get("ok"):
-            last_welcome_message[chat_id] = msg_data["result"]["message_id"]
+    try:
+        response = requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
+        if response.status_code == 200:
+            msg_data = response.json()
+            if msg_data.get("ok"):
+                last_welcome_message[chat_id] = msg_data["result"]["message_id"]
+                print(f"✅ Mensagem de boas-vindas enviada com sucesso!")
+            else:
+                print(f"❌ Erro ao enviar mensagem: {msg_data}")
+        else:
+            print(f"❌ Erro HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        print(f"❌ Exceção ao enviar: {e}")
 
 def send_faq(chat_id):
     faq_text = (
@@ -137,30 +145,6 @@ def send_social_media(chat_id):
     }
     requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
 
-def send_game(chat_id):
-    """Envia o botão do jogo Rhaps Catcher com Web App"""
-    keyboard = {
-        "inline_keyboard": [
-            [{
-                "text": "🎮 Jogar Rhaps Catcher",
-                "web_app": {"url": GAME_URL}
-            }]
-        ]
-    }
-    payload = {
-        "chat_id": chat_id,
-        "text": "🌟 *Bem-vindo ao Rhaps Catcher!*\n\n"
-                "Colete moedas $RHAP no nosso jogo exclusivo!\n\n"
-                "💡 *Controles:*\n"
-                "• 🖱️ Mouse ou 👉 Toque para mover\n"
-                "• ⌨️ Setas ou botões para mobile\n\n"
-                "⚡ A velocidade aumenta conforme você pega moedas!\n\n"
-                "Seu recorde pessoal é salvo automaticamente.",
-        "parse_mode": "Markdown",
-        "reply_markup": keyboard
-    }
-    requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
-
 def send_buy_message(chat_id):
     """Resposta ao detectar gatilhos de compra"""
     keyboard = {
@@ -191,13 +175,22 @@ def webhook():
         if "new_chat_member" in message:
             new_member = message["new_chat_member"]
             user_id = new_member.get("id")
+            is_bot = new_member.get("is_bot", False)
+            first_name = new_member.get("first_name", "amigo")
+            
+            print(f"🔔 Novo membro detectado: {first_name} (ID: {user_id}, Bot: {is_bot})")
+            
+            # Ignorar se for outro bot (mas não o nosso)
+            if is_bot:
+                print(f"❌ Ignorando bot: {first_name}")
+                return "OK"
+            
             # Ignorar se for o próprio bot entrando
             if BOT_ID and str(user_id) == BOT_ID:
+                print(f"❌ Ignorando o próprio bot")
                 return "OK"
-            # Ignorar bots (exceto o nosso)
-            if new_member.get("is_bot"):
-                return "OK"
-            first_name = new_member.get("first_name", "amigo")
+            
+            print(f"✅ Enviando boas-vindas para {first_name}")
             send_welcome(chat_id, first_name)
             return "OK"
 
@@ -234,7 +227,6 @@ def webhook():
             send_faq(chat_id)
         elif callback_data == "redes_sociais":
             send_social_media(chat_id)
-
 
         # Responder callback
         requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
