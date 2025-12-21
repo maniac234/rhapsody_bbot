@@ -1,8 +1,6 @@
 from flask import Flask, request
 import requests
 import os
-import threading
-import time
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,9 +16,6 @@ GAME_URL = os.getenv("GAME_URL", "https://seu-usuario.github.io/rhaps-catcher/jo
 
 # Armazena última mensagem de boas-vindas por chat_id
 last_welcome_message = {}
-
-# Armazena usuários aguardando confirmação: {user_id: chat_id}
-pending_users = {}
 
 # Gatilhos de compra
 TRIGGERS = ["como comprar", "onde comprar", "quero comprar", "comprar rhap", "como compra"]
@@ -47,30 +42,6 @@ def set_webhook():
         print(f"❌ Erro: {e}")
 
 # --- FUNÇÕES DE SUPORTE ---
-def remove_user_if_pending(chat_id, user_id):
-    time.sleep(60)
-    if user_id in pending_users:
-        try:
-            requests.post(f"{TELEGRAM_API}/banChatMember", json={"chat_id": chat_id, "user_id": user_id})
-            time.sleep(1)
-            requests.post(f"{TELEGRAM_API}/unbanChatMember", json={"chat_id": chat_id, "user_id": user_id})
-        except:
-            pass
-        pending_users.pop(user_id, None)
-
-def send_captcha(chat_id, user_id, first_name):
-    message = f"👋 Olá, {first_name}! Para confirmar que você é humano, clique no botão abaixo:"
-    keyboard = {"inline_keyboard": [[{"text": "✅ Sou humano", "callback_data": f"captcha_{user_id}"}]]}
-    payload = {"chat_id": chat_id, "text": message, "reply_markup": keyboard}
-    response = requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
-    if response.status_code == 200:
-        msg_data = response.json()
-        if msg_data.get("ok"):
-            pending_users[user_id] = chat_id
-            thread = threading.Thread(target=remove_user_if_pending, args=(chat_id, user_id))
-            thread.daemon = True
-            thread.start()
-
 def send_welcome(chat_id, first_name):
     global last_welcome_message
 
@@ -200,9 +171,8 @@ def send_buy_message(chat_id):
     }
     payload = {
         "chat_id": chat_id,
-        "text": "🚀 *Ótima pergunta!*\n\n"
-                "Você pode adquirir $RHAP na plataforma CriptoCash durante a pré-venda (até 20/01/2026).\n\n"
-                "O lançamento oficial acontecerá em 23/01/2026 na Bitcoin Brasil (BBT).",
+        "text": "💎 *Quer comprar $RHAP?*\n\n"
+                "Acesse nossa plataforma de pré-venda na CriptoCash e comece a acumular tokens para o lançamento oficial!",
         "parse_mode": "Markdown",
         "reply_markup": keyboard
     }
@@ -217,15 +187,7 @@ def webhook():
         message = data["message"]
         chat_id = message["chat"]["id"]
 
-        if "new_chat_member" in message:
-            new_member = message["new_chat_member"]
-            user_id = new_member.get("id")
-            if str(user_id) == BOT_ID:
-                return "OK"
-            first_name = new_member.get("first_name", "amigo")
-            send_captcha(chat_id, user_id, first_name)
-            return "OK"
-
+        # Mensagens de texto
         if "text" in message:
             text = message["text"].lower().strip()
             first_name = message["from"].get("first_name", "amigo")
@@ -241,75 +203,32 @@ def webhook():
                     }
                     requests.post(f"{TELEGRAM_API}/sendMessage", json=reply)
                 return "OK"
-            
-            if text == "/jogo":
-                send_game(chat_id)
-                return "OK"
 
-            if text == "/faq":
-                send_faq(chat_id)
-                return "OK"
+            # Gatilhos de compra
+            for trigger in TRIGGERS:
+                if trigger in text:
+                    send_buy_message(chat_id)
+                    return "OK"
 
-            if text == "/redes":
-                send_social_media(chat_id)
-                return "OK"
-
-            if text == "/comprar":
-                send_buy_message(chat_id)
-                return "OK"
-
-            # Detecta gatilhos de compra em mensagens normais
-            if any(trigger in text for trigger in TRIGGERS):
-                send_buy_message(chat_id)
-                return "OK"
-
-    # Callback queries (botões inline)
+    # Callbacks
     if data and "callback_query" in data:
         callback = data["callback_query"]
         chat_id = callback["message"]["chat"]["id"]
-        callback_data = callback["data"]
-        user_id = callback["from"]["id"]
-
-        if callback_data == "captcha_" + str(user_id):
-            if user_id in pending_users:
-                pending_users.pop(user_id, None)
-                response = requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={
-                    "callback_query_id": callback["id"],
-                    "text": "✅ Bem-vindo! Você foi verificado.",
-                    "show_alert": False
-                })
-            return "OK"
+        callback_data = callback.get("data", "")
 
         if callback_data == "faq":
             send_faq(chat_id)
-            requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
-            return "OK"
-
-        if callback_data == "play_game":
-            send_game(chat_id)
-            requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
-            return "OK"
-
-        if callback_data == "redes_sociais":
+        elif callback_data == "redes_sociais":
             send_social_media(chat_id)
-            requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
-            return "OK"
+        elif callback_data == "play_game":
+            send_game(chat_id)
+
+        # Responder callback
+        requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
 
     return "OK"
 
-# --- ROTAS ---
-@app.route("/", methods=["GET"])
-def index():
-    return "✅ Bot Rhapsody Protocol + Rhaps Catcher rodando!", 200
-
-@app.route("/health", methods=["GET"])
-def health():
-    return "OK", 200
-
-# --- INICIALIZAR ---
+# Inicializar webhook ao rodar
 if __name__ == "__main__":
-    print("🚀 Iniciando bot...")
     set_webhook()
-    print("✅ Bot pronto!")
-    app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
-
+    app.run(host="0.0.0.0", port=5000)
