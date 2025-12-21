@@ -74,7 +74,7 @@ def send_welcome(chat_id, first_name):
                 {"text": "🛒 Compre RHAP", "url": "https://rhapsody.criptocash.app/"}
             ],
             [
-                {"text": "🎮 Jogar Rhaps Catcher", "callback_data": "play_game"}
+                {"text": "🎮 Jogar Rhaps Catcher", "web_app": {"url": GAME_URL}}
             ],
             [{"text": "📱 Redes sociais", "callback_data": "redes_sociais"}]
         ]
@@ -230,8 +230,7 @@ def webhook():
             send_faq(chat_id)
         elif callback_data == "redes_sociais":
             send_social_media(chat_id)
-        elif callback_data == "play_game":
-            send_game(chat_id)
+
 
         # Responder callback
         requests.post(f"{TELEGRAM_API}/answerCallbackQuery", json={"callback_query_id": callback["id"]})
