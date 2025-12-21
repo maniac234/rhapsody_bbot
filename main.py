@@ -191,7 +191,11 @@ def webhook():
         if "new_chat_member" in message:
             new_member = message["new_chat_member"]
             user_id = new_member.get("id")
-            if str(user_id) == BOT_ID:
+            # Ignorar se for o próprio bot entrando
+            if BOT_ID and str(user_id) == BOT_ID:
+                return "OK"
+            # Ignorar bots (exceto o nosso)
+            if new_member.get("is_bot"):
                 return "OK"
             first_name = new_member.get("first_name", "amigo")
             send_welcome(chat_id, first_name)
@@ -240,4 +244,4 @@ def webhook():
 # Inicializar webhook ao rodar
 if __name__ == "__main__":
     set_webhook()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0"
